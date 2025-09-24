@@ -1,15 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
 from datetime import timedelta
 from models import LoginRequest, LoginResponse, MetricsFilters, MetricsResponse
 from auth import authenticate_user, create_access_token, verify_token, get_user_by_email, ACCESS_TOKEN_EXPIRE_MINUTES
 from services import get_filtered_metrics
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     """Get current authenticated user."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header missing",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     token = credentials.credentials
     email = verify_token(token)
     user = get_user_by_email(email)

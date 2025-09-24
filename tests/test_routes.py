@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from main import app
-from auth import create_access_token
 from services import filter_metrics_by_date, search_metrics, sort_metrics
 from models import MetricsFilters
 from utils import setup_initial_users
@@ -24,23 +23,9 @@ def setup_test_data():
     setup_initial_users()
     yield
 
-@pytest.fixture
-def admin_token():
-    """Create admin token for testing."""
-    return create_access_token(data={"sub": "admin@company.com"})
+# Admin and user tokens are now provided by conftest.py
 
-@pytest.fixture
-def sample_metrics_df():
-    """Create sample metrics DataFrame for testing."""
-    return pd.DataFrame({
-        'date': pd.to_datetime(['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04']),
-        'campaign_name': ['Summer Sale', 'Winter Promo', 'Spring Launch', 'Holiday Special'],
-        'impressions': [1000, 2000, 3000, 4000],
-        'clicks': [100, 200, 300, 400],
-        'cost_micros': [50000000, 100000000, 150000000, 200000000],
-        'conversions': [5.0, 10.0, 15.0, 20.0],
-        'conversion_rate': [0.05, 0.05, 0.05, 0.05]
-    })
+# Sample metrics fixture is now in conftest.py
 
 class TestMetricsEndpoints:
     def test_get_user_info_success(self, admin_token):
@@ -54,24 +39,23 @@ class TestMetricsEndpoints:
         assert data['email'] == 'admin@company.com'
         assert data['role'] == 'admin'
 
-    def test_get_metrics_success(self, admin_token):
+    def test_get_metrics_success(self, admin_token, mock_load_metrics):
         """Test successful metrics retrieval."""
         headers = {"Authorization": f"Bearer {admin_token}"}
-        
+
         response = client.post(
             "/api/metrics",
             json={},
             headers=headers
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert 'metrics' in data
         assert 'total_count' in data
         assert isinstance(data['metrics'], list)
         assert isinstance(data['total_count'], int)
-
-    def test_get_metrics_with_filters(self, admin_token):
+        assert data['total_count'] == 4  # Our mock has 4 records    def test_get_metrics_with_filters(self, admin_token, mock_load_metrics):
         """Test metrics retrieval with filters."""
         headers = {"Authorization": f"Bearer {admin_token}"}
         

@@ -8,7 +8,6 @@ import pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from main import app
-from auth import create_access_token
 from services import get_filtered_metrics, apply_user_permissions
 from models import MetricsFilters
 from utils import setup_initial_users
@@ -23,49 +22,28 @@ def setup_test_data():
     setup_initial_users()
     yield
 
-@pytest.fixture
-def admin_token():
-    """Create admin token for testing."""
-    return create_access_token(data={"sub": "admin@company.com"})
-
-@pytest.fixture
-def user_token():
-    """Create regular user token for testing."""
-    return create_access_token(data={"sub": "user@company.com"})
-
-@pytest.fixture
-def sample_metrics_data():
-    """Create sample metrics data for testing."""
-    return pd.DataFrame({
-        'date': ['2024-01-01', '2024-01-02', '2024-01-03'],
-        'campaign_name': ['Campaign A', 'Campaign B', 'Campaign C'],
-        'impressions': [1000, 2000, 3000],
-        'clicks': [100, 200, 300],
-        'cost_micros': [50000000, 100000000, 150000000],  # $50, $100, $150
-        'conversions': [5.0, 10.0, 15.0],
-        'conversion_rate': [0.05, 0.05, 0.05]
-    })
+# Tokens and fixtures provided by conftest.py
 
 class TestUserPermissions:
-    def test_admin_sees_cost_column(self, sample_metrics_data):
+    def test_admin_sees_cost_column(self, sample_metrics_df):
         """Test that admin users can see the cost_micros column."""
         admin_user = {'email': 'admin@company.com', 'role': 'admin'}
         
-        result_df = apply_user_permissions(sample_metrics_data.copy(), admin_user)
+        result_df = apply_user_permissions(sample_metrics_df.copy(), admin_user)
         
         assert 'cost_micros' in result_df.columns
-        assert len(result_df.columns) == len(sample_metrics_data.columns)
+        assert len(result_df.columns) == len(sample_metrics_df.columns)
 
-    def test_regular_user_cannot_see_cost_column(self, sample_metrics_data):
+    def test_regular_user_cannot_see_cost_column(self, sample_metrics_df):
         """Test that regular users cannot see the cost_micros column."""
         regular_user = {'email': 'user@company.com', 'role': 'user'}
         
-        result_df = apply_user_permissions(sample_metrics_data.copy(), regular_user)
+        result_df = apply_user_permissions(sample_metrics_df.copy(), regular_user)
         
         assert 'cost_micros' not in result_df.columns
-        assert len(result_df.columns) == len(sample_metrics_data.columns) - 1
+        assert len(result_df.columns) == len(sample_metrics_df.columns) - 1
 
-    def test_admin_metrics_endpoint_includes_cost(self, admin_token):
+    def test_admin_metrics_endpoint_includes_cost(self, admin_token, mock_load_metrics):
         """Test that admin users get cost data from API endpoint."""
         headers = {"Authorization": f"Bearer {admin_token}"}
         
@@ -84,7 +62,7 @@ class TestUserPermissions:
             # Admin should have access to cost_micros field
             assert 'cost_micros' in first_metric or first_metric.get('cost_micros') is not None
 
-    def test_regular_user_metrics_endpoint_excludes_cost(self, user_token):
+    def test_regular_user_metrics_endpoint_excludes_cost(self, user_token, mock_load_metrics):
         """Test that regular users don't get cost data from API endpoint."""
         headers = {"Authorization": f"Bearer {user_token}"}
         
