@@ -1,0 +1,12 @@
+# Backend Directory
+
+Este diretório conterá a API Python com FastAPI.
+
+## Estrutura Planejada:
+- `main.py` - Ponto de entrada da aplicação
+- `auth.py` - Sistema de autenticação JWT
+- `models.py` - Schemas Pydantic
+- `routes.py` - Endpoints da API
+- `services.py` - Lógica de negócio
+- `requirements.txt` - Dependências Python
+- Arquivos CSV de dados

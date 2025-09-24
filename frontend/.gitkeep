@@ -1,0 +1,10 @@
+# Frontend Directory
+
+Este diretório conterá a interface React com Vite.
+
+## Estrutura Planejada:
+- `src/App.jsx` - Componente principal
+- `src/components/` - Componentes React
+- `src/services/` - Cliente HTTP (API)
+- `package.json` - Dependências Node.js
+- `vite.config.js` - Configuração do build

@@ -1,0 +1,8 @@
+# Tests Directory
+
+Este diretório conterá todos os testes automatizados.
+
+## Estrutura Planejada:
+- `test_auth.py` - Testes de autenticação
+- `test_permissions.py` - Testes de permissões
+- `test_routes.py` - Testes de endpoints e filtros
