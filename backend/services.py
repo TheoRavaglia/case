@@ -5,8 +5,12 @@ from typing import List
 
 def load_metrics_data():
     """Load metrics data from CSV file."""
+    import os
     try:
-        df = pd.read_csv('metrics.csv')
+        # Get the directory of this file (backend directory)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, 'metrics.csv')
+        df = pd.read_csv(csv_path)
         # Convert date column to datetime
         df['date'] = pd.to_datetime(df['date'])
         return df
@@ -26,9 +30,14 @@ def filter_metrics_by_date(df: pd.DataFrame, start_date: str = None, end_date: s
     return df
 
 def search_metrics(df: pd.DataFrame, search_term: str = None):
-    """Search metrics by campaign name."""
+    """Search metrics by campaign name or ID."""
     if search_term:
-        df = df[df['campaign_name'].str.contains(search_term, case=False, na=False)]
+        # Check which column exists and search accordingly
+        if 'campaign_name' in df.columns:
+            df = df[df['campaign_name'].str.contains(search_term, case=False, na=False)]
+        elif 'campaign_id' in df.columns:
+            # Convert campaign_id to string for search
+            df = df[df['campaign_id'].astype(str).str.contains(search_term, case=False, na=False)]
     return df
 
 def sort_metrics(df: pd.DataFrame, sort_by: str = None, sort_order: str = "asc"):
@@ -69,13 +78,16 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict) -> MetricsResponse
     # Convert DataFrame to list of MetricData
     metrics_list = []
     for _, row in df.iterrows():
+        # Calculate conversion rate if not present
+        conversion_rate = (row['conversions'] / row['clicks']) * 100 if row['clicks'] > 0 else 0
+        
         metric_data = {
             'date': row['date'].strftime('%Y-%m-%d'),
-            'campaign_name': row['campaign_name'],
+            'campaign_name': str(row['campaign_id']),  # Use campaign_id as campaign_name
             'impressions': int(row['impressions']),
             'clicks': int(row['clicks']),
             'conversions': float(row['conversions']),
-            'conversion_rate': float(row['conversion_rate'])
+            'conversion_rate': float(conversion_rate)
         }
         
         # Include cost_micros only if user is admin and column exists

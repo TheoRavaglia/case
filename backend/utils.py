@@ -43,7 +43,11 @@ def setup_initial_users():
     ]
     
     df = pd.DataFrame(users_data)
-    df.to_csv('users.csv', index=False)
+    # Get the directory of this file (backend directory)
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(current_dir, 'users.csv')
+    df.to_csv(csv_path, index=False)
     print("Initial users created successfully!")
 
 if __name__ == "__main__":
