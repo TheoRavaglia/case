@@ -60,11 +60,15 @@ async def get_metrics(
     filters: MetricsFilters,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get filtered metrics data."""
+    """Get filtered metrics data with pagination for large datasets."""
     try:
-        metrics_data = get_filtered_metrics(filters, current_user)
+        page = filters.page or 1
+        page_size = min(filters.page_size or 20, 100)  # Default 20 records, max 100 per page
+        
+        metrics_data = get_filtered_metrics(filters, current_user, page, page_size)
         return metrics_data
     except Exception as e:
+        print(f"API Error: {str(e)}")  # Log para debug
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving metrics: {str(e)}"

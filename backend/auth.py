@@ -64,7 +64,8 @@ def authenticate_user(email: str, password: str):
             return False
             
         user_data = user.iloc[0]
-        if verify_password(password, user_data['password']):
+        # Use plain text password comparison (as provided in the case)
+        if password == user_data['password']:
             return {
                 'email': user_data['email'],
                 'name': user_data['name'],
