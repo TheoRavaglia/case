@@ -52,15 +52,20 @@ def verify_token(token: str):
 
 def authenticate_user(email: str, password: str):
     """Authenticate a user by email and password."""
+    import os
     try:
-        users_df = pd.read_csv('users.csv')
+        # Get the directory of this file (backend directory)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, 'users.csv')
+        users_df = pd.read_csv(csv_path)
         user = users_df[users_df['email'] == email]
         
         if user.empty:
             return False
             
         user_data = user.iloc[0]
-        if verify_password(password, user_data['password']):
+        # Use plain text password comparison (as provided in the case)
+        if password == user_data['password']:
             return {
                 'email': user_data['email'],
                 'name': user_data['name'],
@@ -72,8 +77,12 @@ def authenticate_user(email: str, password: str):
 
 def get_user_by_email(email: str):
     """Get user information by email."""
+    import os
     try:
-        users_df = pd.read_csv('users.csv')
+        # Get the directory of this file (backend directory)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, 'users.csv')
+        users_df = pd.read_csv(csv_path)
         user = users_df[users_df['email'] == email]
         
         if user.empty:

@@ -35,3 +35,5 @@ class MetricsFilters(BaseModel):
     sort_by: Optional[str] = None
     sort_order: Optional[str] = "asc"
     search: Optional[str] = None
+    page: Optional[int] = 1
+    page_size: Optional[int] = 20
