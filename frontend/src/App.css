@@ -170,12 +170,70 @@ body {
   border-radius: 4px;
 }
 
-.filters button {
-  padding: 8px 16px;
+/* Filter Actions */
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-apply {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-apply:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.btn-apply:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-clear {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-clear:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.btn-clear:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.btn-secondary {
   background: #6c757d;
   color: white;
   border: none;
   border-radius: 4px;
+  padding: 8px 16px;
   cursor: pointer;
 }
 
@@ -237,6 +295,37 @@ body {
   background: #e9ecef;
   border-radius: 4px;
   text-align: left;
+}
+
+/* Filter Feedback */
+.filter-feedback {
+  margin-top: 15px;
+}
+
+.filter-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 4px;
+  color: #1565c0;
+  font-size: 14px;
+}
+
+.filter-icon {
+  font-size: 16px;
+}
+
+.filter-tag {
+  background: #2196f3;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 5px;
 }
 
 .metrics-summary {

@@ -15,6 +15,7 @@ class ApiService {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
       },
+      signal: AbortSignal.timeout(30000), // 30 second timeout
       ...options,
     };
 
@@ -39,9 +40,16 @@ class ApiService {
   }
 
   async getMetrics(filters?: MetricsFilter): Promise<{ metrics: Metric[]; total_count: number }> {
+    // Adiciona configurações padrão para otimização
+    const defaultFilters = {
+      page: 1,
+      page_size: 20,
+      ...filters
+    };
+    
     return this.request<{ metrics: Metric[]; total_count: number }>('/metrics', {
       method: 'POST',
-      body: JSON.stringify(filters || {}),
+      body: JSON.stringify(defaultFilters),
     });
   }
 }

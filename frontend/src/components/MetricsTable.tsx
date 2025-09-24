@@ -17,17 +17,41 @@ export default function MetricsTable({ user }: MetricsTableProps) {
     loadMetrics();
   }, [filters]);
 
-  const loadMetrics = async () => {
+  // Função para verificar se há filtros ativos
+  const hasActiveFilters = () => {
+    return !!(filters.start_date || filters.end_date);
+  };
+
+  // Função para limpar todos os filtros
+  const clearAllFilters = () => {
+    setFilters({});
+    setSortConfig({ key: 'date', direction: 'desc' });
+    // Recarrega dados sem filtros
+    loadMetricsWithFilters({});
+  };
+
+  // Função para aplicar filtros
+  const applyFilters = () => {
+    loadMetricsWithFilters(filters);
+  };
+
+  // Função auxiliar para carregar métricas com filtros específicos
+  const loadMetricsWithFilters = async (filterParams: MetricsFilter) => {
     setLoading(true);
     setError('');
     try {
-      const response = await api.getMetrics(filters);
+      const response = await api.getMetrics(filterParams);
       setMetrics(response.metrics);
     } catch (err) {
       setError('Erro ao carregar métricas');
+      console.error('Erro:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMetrics = async () => {
+    loadMetricsWithFilters(filters);
   };
 
   const handleSort = (key: keyof Metric) => {
@@ -36,6 +60,13 @@ export default function MetricsTable({ user }: MetricsTableProps) {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+    
+    // Enviar ordenação para o backend também
+    setFilters({
+      ...filters,
+      sort_by: key,
+      sort_order: direction
+    });
   };
 
   const sortedMetrics = [...metrics].sort((a, b) => {
@@ -77,25 +108,66 @@ export default function MetricsTable({ user }: MetricsTableProps) {
       
       {/* Filtros por Data */}
       <div className="filters">
-        <div>
+        <div className="filter-group">
           <label htmlFor="startDate">Data Inicial:</label>
           <input
             type="date"
             id="startDate"
-            value={filters.startDate || ''}
-            onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+            value={filters.start_date || ''}
+            onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
+            max="2024-12-31"
+            min="2024-01-01"
           />
         </div>
-        <div>
+        <div className="filter-group">
           <label htmlFor="endDate">Data Final:</label>
           <input
             type="date"
             id="endDate"
-            value={filters.endDate || ''}
-            onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+            value={filters.end_date || ''}
+            onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
+            max="2024-12-31"
+            min="2024-01-01"
           />
         </div>
-        <button onClick={() => setFilters({})}>Limpar Filtros</button>
+        <div className="filter-actions">
+          <button 
+            onClick={clearAllFilters} 
+            className="btn btn-clear"
+            disabled={!hasActiveFilters()}
+            title="Remove todos os filtros aplicados"
+          >
+            🗑️ Limpar Filtros
+          </button>
+          <button 
+            onClick={applyFilters} 
+            className="btn btn-apply"
+            disabled={loading}
+            title="Aplica os filtros de data selecionados"
+          >
+            {loading ? '⏳ Carregando...' : '🔍 Aplicar Filtros'}
+          </button>
+        </div>
+        
+        {/* Feedback dos filtros */}
+        {hasActiveFilters() && (
+          <div className="filter-feedback">
+            <div className="filter-info">
+              <span className="filter-icon">📅</span>
+              <strong>Filtros ativos:</strong>
+              {filters.start_date && (
+                <span className="filter-tag">
+                  De: {new Date(filters.start_date).toLocaleDateString('pt-BR')}
+                </span>
+              )}
+              {filters.end_date && (
+                <span className="filter-tag">
+                  Até: {new Date(filters.end_date).toLocaleDateString('pt-BR')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabela */}

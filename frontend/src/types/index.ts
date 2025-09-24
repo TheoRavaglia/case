@@ -25,8 +25,13 @@ export interface LoginResponse {
 }
 
 export interface MetricsFilter {
-  startDate?: string;
-  endDate?: string;
+  start_date?: string;
+  end_date?: string;
+  page?: number;
+  page_size?: number;
+  sort_by?: string;
+  sort_order?: string;
+  search?: string;
 }
 
 export type SortDirection = 'asc' | 'desc';
