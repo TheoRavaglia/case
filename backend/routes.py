@@ -9,6 +9,23 @@ from services import get_filtered_metrics
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
+@router.get("/")
+async def root():
+    """API Root endpoint - Health check and information."""
+    return {
+        "message": "Marketing Analytics API funcionando",
+        "version": "1.0.0",
+        "status": "active",
+        "endpoints": {
+            "login": "/api/login",
+            "metrics": "/api/metrics",
+            "user_info": "/api/me",
+            "documentation": "/docs",
+            "openapi": "/openapi.json"
+        },
+        "description": "API for marketing metrics analysis with JWT authentication and smart pagination"
+    }
+
 def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     """Get current authenticated user."""
     if credentials is None:
@@ -68,7 +85,7 @@ async def get_metrics(
         metrics_data = get_filtered_metrics(filters, current_user, page, page_size)
         return metrics_data
     except Exception as e:
-        print(f"API Error: {str(e)}")  # Log para debug
+        print(f"API Error: {str(e)}")  # Debug log
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving metrics: {str(e)}"
