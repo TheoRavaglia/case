@@ -1,4 +1,4 @@
-/* Reset básico */
+/* Basic reset */
 * {
   margin: 0;
   padding: 0;
@@ -11,7 +11,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-/* Container principal */
+/* Main container */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -305,6 +305,7 @@ body {
 .filter-info {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px;
   background: #e3f2fd;
@@ -312,10 +313,13 @@ body {
   border-radius: 4px;
   color: #1565c0;
   font-size: 14px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .filter-icon {
   font-size: 16px;
+  flex-shrink: 0;
 }
 
 .filter-tag {
@@ -325,12 +329,63 @@ body {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  margin-left: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.metrics-summary {
-  padding: 15px;
+/* Pagination */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+  padding: 20px;
   background: #f8f9fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.page-numbers .btn {
+  min-width: 40px;
+  padding: 8px 12px;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
   border-radius: 4px;
-  border-left: 4px solid #007bff;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #545b62;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  background: #dee2e6;
+  color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
 }
