@@ -40,3 +40,11 @@ export interface SortConfig {
   key: keyof Metric;
   direction: SortDirection;
 }
+
+export interface MetricsResponse {
+  metrics: Metric[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}

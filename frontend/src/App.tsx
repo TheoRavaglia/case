@@ -10,17 +10,17 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se já tem token salvo
+    // Check if a token is already saved
     const token = localStorage.getItem('token');
     if (token) {
       api.setToken(token);
-      // Verificar se o token ainda é válido
+      // Check if the token is still valid
       api.getCurrentUser()
-        .then(userData => {
-          setUser(userData);
-        })
-        .catch(() => {
-          // Token inválido, remover
+      .then(userData => {
+        setUser(userData);
+      })
+      .catch(() => {
+        // Invalid token, remove
           localStorage.removeItem('token');
           api.setToken(null);
         })
@@ -48,7 +48,7 @@ function App() {
   if (loading) {
     return (
       <div className="container">
-        <div className="loading">Carregando...</div>
+        <div className="loading">Loading...</div>
       </div>
     );
   }
@@ -61,12 +61,12 @@ function App() {
         <>
           <div className="user-info">
             <div>
-              <strong>Bem-vindo, {user.name}</strong>
+              <strong>Welcome, {user.name}</strong>
               <br />
               <small>{user.email} ({user.role})</small>
             </div>
             <button className="btn btn-danger" onClick={handleLogout}>
-              Sair
+              Logout
             </button>
           </div>
           <MetricsTable user={user} />

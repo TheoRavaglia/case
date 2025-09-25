@@ -1,7 +1,7 @@
-import type { LoginCredentials, LoginResponse, Metric, MetricsFilter, User } from '../types';
+import type { LoginCredentials, LoginResponse, MetricsFilter, MetricsResponse, User } from '../types';
 
 class ApiService {
-  private baseUrl = 'http://localhost:8080/api';
+  private baseUrl = 'http://localhost:8001/api';
   private token: string | null = null;
 
   setToken(token: string | null) {
@@ -39,17 +39,19 @@ class ApiService {
     return this.request<User>('/me');
   }
 
-  async getMetrics(filters?: MetricsFilter): Promise<{ metrics: Metric[]; total_count: number }> {
-    // Adiciona configurações padrão para otimização
-    const defaultFilters = {
+  async getMetrics(filters?: MetricsFilter): Promise<MetricsResponse> {
+    // Always include pagination now for better performance
+    const requestData = {
       page: 1,
-      page_size: 20,
+      page_size: 50, // Increased to 50 records per page
       ...filters
     };
     
-    return this.request<{ metrics: Metric[]; total_count: number }>('/metrics', {
+    console.log('Sending data to API:', requestData);
+    
+    return this.request<MetricsResponse>('/metrics', {
       method: 'POST',
-      body: JSON.stringify(defaultFilters),
+      body: JSON.stringify(requestData),
     });
   }
 }
