@@ -28,6 +28,9 @@ class MetricData(BaseModel):
 class MetricsResponse(BaseModel):
     metrics: List[MetricData]
     total_count: int
+    page: int
+    page_size: int
+    total_pages: int
 
 class MetricsFilters(BaseModel):
     start_date: Optional[str] = None

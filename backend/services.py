@@ -17,9 +17,33 @@ def load_metrics_data():
     except Exception as e:
         raise Exception(f"Error loading metrics data: {str(e)}")
 
+def load_full_metrics_data():
+    """Load ALL metrics data from CSV file for filtering operations."""
+    import os
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, 'metrics.csv')
+        
+        print("Loading full CSV data for date filtering...")
+        df = pd.read_csv(csv_path)
+        
+        # Convert date column to datetime
+        if 'date' in df.columns:
+            df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        
+        print(f"Loaded {len(df)} total records from CSV")
+        return df
+    except Exception as e:
+        print(f"Error loading full metrics data: {str(e)}")
+        # Fallback: return sample data
+        return create_sample_data(100)
+
 def filter_metrics_by_date(df: pd.DataFrame, start_date: str = None, end_date: str = None):
     """Filter metrics by date range."""
     try:
+        initial_count = len(df)
+        print(f"Date filtering - Initial records: {initial_count}")
+        
         if start_date:
             start_date_parsed = pd.to_datetime(start_date)
             print(f"Filtering by start_date: {start_date_parsed}")
@@ -32,6 +56,7 @@ def filter_metrics_by_date(df: pd.DataFrame, start_date: str = None, end_date: s
             df = df[df['date'] <= end_date_parsed]
             print(f"Records after end_date filter: {len(df)}")
         
+        print(f"Date filtering completed: {initial_count} -> {len(df)} records")
         return df
     except Exception as e:
         print(f"Error in date filtering: {str(e)}")
@@ -63,16 +88,33 @@ def apply_user_permissions(df: pd.DataFrame, user: dict):
     return df
 
 def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, page_size: int = 20) -> MetricsResponse:
-    """Get metrics data with applied filters and permissions (paginated for performance)."""
+    """Get metrics data with applied filters and permissions with smart pagination.
+    ALWAYS uses pagination to maintain performance and usability."""
     try:
-        # Load data with chunking for large files
-        df = load_metrics_data_optimized(filters, page, page_size)
+        # Maximum page_size limit to avoid overload
+        page_size = min(page_size, 100)  # Maximum 100 records per page
+        
+        # Determine if there are active date filters
+        has_date_filters = filters.start_date or filters.end_date
+        
+        if has_date_filters:
+            # With date filters: load, filter AND paginate (never all data)
+            df_filtered = load_and_filter_data_smart(filters)
+            total_count = len(df_filtered)
+            
+            # Apply pagination even with filters
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            df = df_filtered.iloc[start_idx:end_idx]
+            
+            print(f"Date filter applied: {total_count} total records, showing page {page} ({len(df)} records)")
+        else:
+            # Without filters: direct optimized pagination
+            df = load_metrics_data_optimized(filters, page, page_size)
+            total_count = get_total_count_estimate()
         
         # Apply user permissions
         df = apply_user_permissions(df, user)
-        
-        # Get total count (this is expensive but needed for pagination)
-        total_count = get_total_count_with_filters(filters)
         
         # Convert DataFrame to list of MetricData
         metrics_list = []
@@ -97,7 +139,10 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
         
         return MetricsResponse(
             metrics=metrics_list,
-            total_count=total_count
+            total_count=total_count,
+            page=page,
+            page_size=page_size,
+            total_pages=((total_count - 1) // page_size) + 1 if total_count > 0 else 1
         )
     except Exception as e:
         print(f"Error in get_filtered_metrics: {str(e)}")
@@ -171,8 +216,50 @@ def create_sample_data(page_size: int = 20):
     
     return pd.DataFrame(data)
 
+def load_and_filter_data_smart(filters: MetricsFilters):
+    """Load and filter data with smart optimization for large datasets."""
+    try:
+        # Load complete CSV only when necessary
+        df = load_full_metrics_data()
+        
+        # Apply date filters
+        if filters.start_date or filters.end_date:
+            df = filter_metrics_by_date(df, filters.start_date, filters.end_date)
+        
+        # Apply search if specified
+        if filters.search:
+            df = search_metrics(df, filters.search)
+        
+        # Apply sorting
+        df = sort_metrics(df, filters.sort_by, filters.sort_order)
+        
+        # IMPORTANT: Limit maximum result to avoid overload
+        MAX_FILTERED_RESULTS = 1000
+        if len(df) > MAX_FILTERED_RESULTS:
+            print(f"Warning: Filtering returned {len(df)} records, limiting to {MAX_FILTERED_RESULTS} for performance")
+            df = df.head(MAX_FILTERED_RESULTS)
+        
+        return df
+    except Exception as e:
+        print(f"Error in smart filtering: {str(e)}")
+        return create_sample_data(20)
+
+def get_total_count_estimate() -> int:
+    """Get estimated total count without loading full dataset."""
+    import os
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, 'metrics.csv')
+        
+        # Count lines optimized way
+        with open(csv_path, 'r') as f:
+            count = sum(1 for _ in f) - 1  # -1 for header
+        return count
+    except Exception:
+        return 1000000  # Default estimate
+
 def get_total_count_with_filters(filters: MetricsFilters) -> int:
     """Get total count of records matching filters (fast estimation)."""
-    # Para demonstração, retornamos uma estimativa fixa
-    # Em produção, isso seria calculado via database ou cache
-    return 1000  # Estimativa rápida para evitar contar 1M+ linhas
+    # For demonstration, we return a fixed estimate
+    # In production, this would be calculated via database or cache
+    return 1000  # Quick estimate to avoid counting 1M+ lines
