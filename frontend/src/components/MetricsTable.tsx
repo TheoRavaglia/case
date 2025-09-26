@@ -37,58 +37,28 @@ export default function MetricsTable({ user }: MetricsTableProps) {
     loadMetricsWithFilters({});
   };
 
-  // Function to apply filters
-  const applyFilters = () => {
-    console.log('Applying filters:', filters);
-    console.log('Are there date filters?', hasActiveFilters());
-    loadMetricsWithFilters(filters);
-  };
+  const applyFilters = () => loadMetricsWithFilters(filters);
 
-  // Helper function to load metrics with specific filters
   const loadMetricsWithFilters = async (filterParams: MetricsFilter) => {
     setLoading(true);
     setError('');
     try {
-      console.log('Sending filters to API:', filterParams);
       const response = await api.getMetrics(filterParams);
-      console.log('API response:', response);
-      
       setMetrics(response.metrics);
-      setPagination({
-        total_count: response.total_count,
-        page: response.page,
-        page_size: response.page_size,
-        total_pages: response.total_pages
-      });
+      setPagination(response);
     } catch (err) {
       setError('Error loading metrics');
-      console.error('Error loading metrics:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadMetrics = async () => {
-    loadMetricsWithFilters(filters);
-  };
+  const loadMetrics = () => loadMetricsWithFilters(filters);
 
-  // Pagination functions
   const goToPage = (page: number) => {
     const newFilters = { ...filters, page };
     setFilters(newFilters);
     loadMetricsWithFilters(newFilters);
-  };
-
-  const goToPreviousPage = () => {
-    if (pagination.page > 1) {
-      goToPage(pagination.page - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (pagination.page < pagination.total_pages) {
-      goToPage(pagination.page + 1);
-    }
   };
 
   const handleSort = (key: keyof Metric) => {
@@ -108,20 +78,7 @@ export default function MetricsTable({ user }: MetricsTableProps) {
     loadMetricsWithFilters(newFilters);
   };
 
-  const sortedMetrics = [...metrics].sort((a, b) => {
-    let aVal = a[sortConfig.key];
-    let bVal = b[sortConfig.key];
-    
-    // Special handling for date sorting
-    if (sortConfig.key === 'date') {
-      aVal = new Date(aVal as string).getTime();
-      bVal = new Date(bVal as string).getTime();
-    }
-    
-    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
+
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -131,19 +88,14 @@ export default function MetricsTable({ user }: MetricsTableProps) {
   };
 
   const formatDate = (dateStr: string) => {
-    // Ensure consistent date formatting without timezone issues
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('en-GB');
+    // Backend returns YYYY-MM-DD format - simple display conversion
+    return dateStr.split('-').reverse().join('/'); // YYYY-MM-DD -> DD/MM/YYYY
   };
 
   const getSortIcon = (columnKey: keyof Metric) => {
     if (sortConfig.key !== columnKey) return '↕️';
     return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
-
-  if (loading) {
-    return <div className="loading">Loading metrics...</div>;
-  }
 
   if (error) {
     return <div className="error">{error}</div>;
@@ -161,10 +113,7 @@ export default function MetricsTable({ user }: MetricsTableProps) {
             type="date"
             id="startDate"
             value={filters.start_date || ''}
-            onChange={(e) => {
-              console.log('Start date changed:', e.target.value);
-              setFilters({ ...filters, start_date: e.target.value });
-            }}
+            onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
             placeholder="Select start date"
           />
         </div>
@@ -174,10 +123,7 @@ export default function MetricsTable({ user }: MetricsTableProps) {
             type="date"
             id="endDate"
             value={filters.end_date || ''}
-            onChange={(e) => {
-              console.log('End date changed:', e.target.value);
-              setFilters({ ...filters, end_date: e.target.value });
-            }}
+            onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
             placeholder="Select end date"
           />
         </div>
@@ -222,8 +168,12 @@ export default function MetricsTable({ user }: MetricsTableProps) {
       </div>
 
       {/* Table */}
-      <div className="table-container">
-        {sortedMetrics.length === 0 ? (
+      <div className="table-container" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
+        {loading ? (
+          <div className="loading" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <p>🔄 Loading metrics...</p>
+          </div>
+        ) : metrics.length === 0 ? (
           <div className="no-data">
             <p>📊 No data found for the selected criteria.</p>
             {hasActiveFilters() && (
@@ -249,8 +199,8 @@ export default function MetricsTable({ user }: MetricsTableProps) {
                 <th onClick={() => handleSort('conversions')}>
                   Conversions {getSortIcon('conversions')}
                 </th>
-                {/* cost_micros column only for admin */}
-                {user.role === 'admin' && (
+                {/* Backend handles cost_micros permission - only shows if user is admin */}
+                {metrics.length > 0 && metrics[0].cost_micros !== undefined && (
                   <th onClick={() => handleSort('cost_micros')}>
                     Cost {getSortIcon('cost_micros')}
                   </th>
@@ -258,14 +208,15 @@ export default function MetricsTable({ user }: MetricsTableProps) {
               </tr>
             </thead>
             <tbody>
-              {sortedMetrics.map((metric, index) => (
+              {metrics.map((metric, index) => (
                 <tr key={index}>
                   <td>{formatDate(metric.date)}</td>
                   <td>{metric.campaign_name}</td>
                   <td>{metric.impressions.toLocaleString()}</td>
                   <td>{metric.clicks.toLocaleString()}</td>
                   <td>{metric.conversions.toLocaleString()}</td>
-                  {user.role === 'admin' && (
+                  {/* Backend controls cost_micros visibility */}
+                  {metric.cost_micros !== undefined && (
                     <td>{formatCurrency(metric.cost_micros)}</td>
                   )}
                 </tr>
@@ -276,17 +227,18 @@ export default function MetricsTable({ user }: MetricsTableProps) {
       </div>
 
       {/* Pagination */}
-      <div className="pagination-container">
-        <div className="pagination-info">
-          <p>
-            Showing {((pagination.page - 1) * pagination.page_size) + 1} to {Math.min(pagination.page * pagination.page_size, pagination.total_count)} of {pagination.total_count.toLocaleString()} records
-          </p>
-          <p>Page {pagination.page} of {pagination.total_pages}</p>
-        </div>
+      {!loading && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            <p>
+              Showing {((pagination.page - 1) * pagination.page_size) + 1} to {Math.min(pagination.page * pagination.page_size, pagination.total_count)} of {pagination.total_count.toLocaleString()} records
+            </p>
+            <p>Page {pagination.page} of {pagination.total_pages}</p>
+          </div>
         
         <div className="pagination-controls">
           <button 
-            onClick={goToPreviousPage} 
+            onClick={() => pagination.page > 1 && goToPage(pagination.page - 1)} 
             disabled={pagination.page <= 1}
             className="btn btn-secondary"
           >
@@ -312,20 +264,21 @@ export default function MetricsTable({ user }: MetricsTableProps) {
           </span>
           
           <button 
-            onClick={goToNextPage} 
+            onClick={() => pagination.page < pagination.total_pages && goToPage(pagination.page + 1)} 
             disabled={pagination.page >= pagination.total_pages}
             className="btn btn-secondary"
           >
             Next →
           </button>
         </div>
-      </div>
+        </div>
+      )}
 
-      <div className="metrics-summary">
-        <p>Total records: {pagination.total_count.toLocaleString()}</p>
-        {user.role === 'admin' && <p>✅ Financial data visible (Admin)</p>}
-        {user.role !== 'admin' && <p>ℹ️ Financial data hidden (Regular user)</p>}
-      </div>
+      {!loading && (
+        <div className="metrics-summary">
+          <p>Total: {pagination.total_count.toLocaleString()} records | {user.role === 'admin' ? '✅ Admin access' : 'ℹ️ Regular user'}</p>
+        </div>
+      )}
     </div>
   );
 }
