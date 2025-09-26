@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-python-jose
-passlib[bcrypt]
-pandas
-pytest
-python-multipart
