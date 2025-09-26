@@ -1,0 +1,7 @@
+# Render Build Script
+#!/usr/bin/env bash
+# Install dependencies
+pip install -r requirements.txt
+
+# You can add any pre-deployment setup here
+echo "Backend deployment ready!"
