@@ -54,9 +54,9 @@ def authenticate_user(email: str, password: str):
     """Authenticate a user by email and password."""
     import os
     try:
-        # Get the directory of this file (backend directory)
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(current_dir, 'users.csv')
+        # Get the backend directory (parent of auth folder)
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(current_dir, 'data', 'users.csv')
         users_df = pd.read_csv(csv_path)
         user = users_df[users_df['email'] == email]
         
@@ -79,9 +79,9 @@ def get_user_by_email(email: str):
     """Get user information by email."""
     import os
     try:
-        # Get the directory of this file (backend directory)
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(current_dir, 'users.csv')
+        # Get the backend directory (parent of auth folder)
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(current_dir, 'data', 'users.csv')
         users_df = pd.read_csv(csv_path)
         user = users_df[users_df['email'] == email]
         
