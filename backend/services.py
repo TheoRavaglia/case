@@ -132,12 +132,16 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
         # Apply user permissions
         df = apply_user_permissions(df, user)
         
-        # Convert DataFrame to list of MetricData
+        # Check if user is admin before processing
+        is_admin = user.get('role') == 'admin'
+        
+        # Convert DataFrame to list of dictionaries (not Pydantic objects)
         metrics_list = []
         for _, row in df.iterrows():
             # Calculate conversion rate if not present
             conversion_rate = (row['conversions'] / row['clicks']) * 100 if row['clicks'] > 0 else 0
             
+            # Base metric data (always included)
             metric_data = {
                 'date': row['date'].strftime('%Y-%m-%d'),
                 'campaign_name': f"Campaign {row['campaign_id']}",
@@ -147,19 +151,23 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
                 'conversion_rate': float(conversion_rate)
             }
             
-            # Include cost_micros only if user is admin and column exists
-            if user.get('role') == 'admin' and 'cost_micros' in row.index:
-                metric_data['cost_micros'] = int(row['cost_micros']) if pd.notna(row['cost_micros']) else None
+            # Add cost_micros ONLY for admin users
+            if is_admin and 'cost_micros' in row.index and pd.notna(row['cost_micros']):
+                metric_data['cost_micros'] = int(row['cost_micros'])
             
+            # Create MetricData from dict - Pydantic will only include provided fields
             metrics_list.append(MetricData(**metric_data))
         
-        return MetricsResponse(
+        # Create response and exclude unset fields for non-admin users
+        response = MetricsResponse(
             metrics=metrics_list,
             total_count=total_count,
             page=page,
             page_size=page_size,
             total_pages=((total_count - 1) // page_size) + 1 if total_count > 0 else 1
         )
+        
+        return response
     except Exception as e:
         print(f"Error in get_filtered_metrics: {str(e)}")
         # Return empty response in case of error

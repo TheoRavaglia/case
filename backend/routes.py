@@ -72,7 +72,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     """Get current user information."""
     return current_user
 
-@router.post("/metrics", response_model=MetricsResponse)
+@router.post("/metrics")
 async def get_metrics(
     filters: MetricsFilters,
     current_user: dict = Depends(get_current_user)
@@ -83,6 +83,15 @@ async def get_metrics(
         page_size = min(filters.page_size or 20, 100)  # Default 20 records, max 100 per page
         
         metrics_data = get_filtered_metrics(filters, current_user, page, page_size)
+        
+        # For non-admin users, remove cost_micros from response
+        if current_user.get('role') != 'admin':
+            response_dict = metrics_data.dict()
+            for metric in response_dict['metrics']:
+                if 'cost_micros' in metric:
+                    del metric['cost_micros']
+            return response_dict
+        
         return metrics_data
     except Exception as e:
         print(f"API Error: {str(e)}")  # Debug log
