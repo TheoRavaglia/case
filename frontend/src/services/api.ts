@@ -1,7 +1,7 @@
 import type { LoginCredentials, LoginResponse, MetricsFilter, MetricsResponse, User } from '../types';
 
 class ApiService {
-  private baseUrl = 'http://localhost:8001/api';
+  private baseUrl = 'https://marketing-analytics-api-nsfc.onrender.com/api';
   private token: string | null = null;
 
   setToken(token: string | null) {
