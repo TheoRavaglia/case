@@ -98,17 +98,25 @@ export default function MetricsTable({ user }: MetricsTableProps) {
     }
     setSortConfig({ key, direction });
     
-    // Send sorting to backend as well
-    setFilters({
+    // Send sorting to backend and reload data
+    const newFilters = {
       ...filters,
       sort_by: key,
       sort_order: direction
-    });
+    };
+    setFilters(newFilters);
+    loadMetricsWithFilters(newFilters);
   };
 
   const sortedMetrics = [...metrics].sort((a, b) => {
-    const aVal = a[sortConfig.key];
-    const bVal = b[sortConfig.key];
+    let aVal = a[sortConfig.key];
+    let bVal = b[sortConfig.key];
+    
+    // Special handling for date sorting
+    if (sortConfig.key === 'date') {
+      aVal = new Date(aVal as string).getTime();
+      bVal = new Date(bVal as string).getTime();
+    }
     
     if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -123,7 +131,9 @@ export default function MetricsTable({ user }: MetricsTableProps) {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GB');
+    // Ensure consistent date formatting without timezone issues
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-GB');
   };
 
   const getSortIcon = (columnKey: keyof Metric) => {
@@ -155,8 +165,6 @@ export default function MetricsTable({ user }: MetricsTableProps) {
               console.log('Start date changed:', e.target.value);
               setFilters({ ...filters, start_date: e.target.value });
             }}
-            max="2024-12-31"
-            min="2024-01-01"
             placeholder="Select start date"
           />
         </div>
@@ -170,8 +178,6 @@ export default function MetricsTable({ user }: MetricsTableProps) {
               console.log('End date changed:', e.target.value);
               setFilters({ ...filters, end_date: e.target.value });
             }}
-            max="2024-12-31"
-            min="2024-01-01"
             placeholder="Select end date"
           />
         </div>
@@ -202,12 +208,12 @@ export default function MetricsTable({ user }: MetricsTableProps) {
               <strong>Active filters:</strong>
               {filters.start_date && (
                 <span className="filter-tag">
-                  From: {new Date(filters.start_date).toLocaleDateString('en-GB')}
+                  From: {new Date(filters.start_date + 'T00:00:00').toLocaleDateString('en-GB')}
                 </span>
               )}
               {filters.end_date && (
                 <span className="filter-tag">
-                  To: {new Date(filters.end_date).toLocaleDateString('en-GB')}
+                  To: {new Date(filters.end_date + 'T00:00:00').toLocaleDateString('en-GB')}
                 </span>
               )}
             </div>
@@ -217,47 +223,56 @@ export default function MetricsTable({ user }: MetricsTableProps) {
 
       {/* Table */}
       <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th onClick={() => handleSort('date')}>
-                Date {getSortIcon('date')}
-              </th>
-              <th onClick={() => handleSort('campaign_name')}>
-                Campaign {getSortIcon('campaign_name')}
-              </th>
-              <th onClick={() => handleSort('impressions')}>
-                Impressions {getSortIcon('impressions')}
-              </th>
-              <th onClick={() => handleSort('clicks')}>
-                Clicks {getSortIcon('clicks')}
-              </th>
-              <th onClick={() => handleSort('conversions')}>
-                Conversions {getSortIcon('conversions')}
-              </th>
-              {/* cost_micros column only for admin */}
-              {user.role === 'admin' && (
-                <th onClick={() => handleSort('cost_micros')}>
-                  Cost {getSortIcon('cost_micros')}
+        {sortedMetrics.length === 0 ? (
+          <div className="no-data">
+            <p>📊 No data found for the selected criteria.</p>
+            {hasActiveFilters() && (
+              <p>Try adjusting your date range or clearing filters to see more results.</p>
+            )}
+          </div>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th onClick={() => handleSort('date')}>
+                  Date {getSortIcon('date')}
                 </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {sortedMetrics.map((metric, index) => (
-              <tr key={index}>
-                <td>{formatDate(metric.date)}</td>
-                <td>{metric.campaign_name}</td>
-                <td>{metric.impressions.toLocaleString()}</td>
-                <td>{metric.clicks.toLocaleString()}</td>
-                <td>{metric.conversions.toLocaleString()}</td>
+                <th onClick={() => handleSort('campaign_name')}>
+                  Campaign {getSortIcon('campaign_name')}
+                </th>
+                <th onClick={() => handleSort('impressions')}>
+                  Impressions {getSortIcon('impressions')}
+                </th>
+                <th onClick={() => handleSort('clicks')}>
+                  Clicks {getSortIcon('clicks')}
+                </th>
+                <th onClick={() => handleSort('conversions')}>
+                  Conversions {getSortIcon('conversions')}
+                </th>
+                {/* cost_micros column only for admin */}
                 {user.role === 'admin' && (
-                  <td>{formatCurrency(metric.cost_micros)}</td>
+                  <th onClick={() => handleSort('cost_micros')}>
+                    Cost {getSortIcon('cost_micros')}
+                  </th>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sortedMetrics.map((metric, index) => (
+                <tr key={index}>
+                  <td>{formatDate(metric.date)}</td>
+                  <td>{metric.campaign_name}</td>
+                  <td>{metric.impressions.toLocaleString()}</td>
+                  <td>{metric.clicks.toLocaleString()}</td>
+                  <td>{metric.conversions.toLocaleString()}</td>
+                  {user.role === 'admin' && (
+                    <td>{formatCurrency(metric.cost_micros)}</td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Pagination */}

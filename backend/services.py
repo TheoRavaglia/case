@@ -11,8 +11,8 @@ def load_metrics_data():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         csv_path = os.path.join(current_dir, 'metrics.csv')
         df = pd.read_csv(csv_path)
-        # Convert date column to datetime
-        df['date'] = pd.to_datetime(df['date'])
+        # Convert date column to datetime without timezone issues
+        df['date'] = pd.to_datetime(df['date']).dt.normalize()
         return df
     except Exception as e:
         raise Exception(f"Error loading metrics data: {str(e)}")
@@ -27,9 +27,9 @@ def load_full_metrics_data():
         print("Loading full CSV data for date filtering...")
         df = pd.read_csv(csv_path)
         
-        # Convert date column to datetime
+        # Convert date column to datetime without timezone issues
         if 'date' in df.columns:
-            df['date'] = pd.to_datetime(df['date'], errors='coerce')
+            df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.normalize()
         
         print(f"Loaded {len(df)} total records from CSV")
         return df
@@ -45,15 +45,17 @@ def filter_metrics_by_date(df: pd.DataFrame, start_date: str = None, end_date: s
         print(f"Date filtering - Initial records: {initial_count}")
         
         if start_date:
-            start_date_parsed = pd.to_datetime(start_date)
+            # Parse date without timezone conversion to avoid off-by-one issues
+            start_date_parsed = pd.to_datetime(start_date).normalize()
             print(f"Filtering by start_date: {start_date_parsed}")
-            df = df[df['date'] >= start_date_parsed]
+            df = df[df['date'].dt.normalize() >= start_date_parsed]
             print(f"Records after start_date filter: {len(df)}")
         
         if end_date:
-            end_date_parsed = pd.to_datetime(end_date)
+            # Parse date without timezone conversion to avoid off-by-one issues
+            end_date_parsed = pd.to_datetime(end_date).normalize()
             print(f"Filtering by end_date: {end_date_parsed}")
-            df = df[df['date'] <= end_date_parsed]
+            df = df[df['date'].dt.normalize() <= end_date_parsed]
             print(f"Records after end_date filter: {len(df)}")
         
         print(f"Date filtering completed: {initial_count} -> {len(df)} records")
@@ -77,7 +79,16 @@ def sort_metrics(df: pd.DataFrame, sort_by: str = None, sort_order: str = "asc")
     """Sort metrics by specified column."""
     if sort_by and sort_by in df.columns:
         ascending = sort_order.lower() == "asc"
+        
+        # Special handling for date column to ensure proper sorting
+        if sort_by == 'date' and 'date' in df.columns:
+            # Ensure date column is datetime type for proper sorting
+            df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.normalize()
+        
+        print(f"Sorting by {sort_by} in {sort_order} order")
         df = df.sort_values(by=sort_by, ascending=ascending)
+        print(f"Sorted {len(df)} records")
+        
     return df
 
 def apply_user_permissions(df: pd.DataFrame, user: dict):
@@ -109,9 +120,14 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
             
             print(f"Date filter applied: {total_count} total records, showing page {page} ({len(df)} records)")
         else:
-            # Without filters: direct optimized pagination
-            df = load_metrics_data_optimized(filters, page, page_size)
-            total_count = get_total_count_estimate()
+            # Without date filters but may have sorting: use smart filtering for consistency
+            df_filtered = load_and_filter_data_smart(filters)
+            total_count = len(df_filtered)
+            
+            # Apply pagination
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            df = df_filtered.iloc[start_idx:end_idx]
         
         # Apply user permissions
         df = apply_user_permissions(df, user)
@@ -179,9 +195,9 @@ def load_metrics_data_optimized(filters: MetricsFilters, page: int = 1, page_siz
             
             print(f"Loaded {len(df)} records successfully")
             
-            # Convert date column to datetime if it exists
+            # Convert date column to datetime if it exists without timezone issues
             if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date'], errors='coerce')
+                df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.normalize()
             
             return df
             
