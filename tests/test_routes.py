@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from main import app
-from services import filter_metrics_by_date, search_metrics, sort_metrics
+from services.services import filter_metrics_by_date, search_metrics, sort_metrics
 from models import MetricsFilters
 from utils import setup_initial_users
 import pandas as pd

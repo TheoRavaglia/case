@@ -8,7 +8,7 @@ import pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from main import app
-from services import get_filtered_metrics, apply_user_permissions
+from services.services import get_filtered_metrics, apply_user_permissions
 from models import MetricsFilters
 from utils import setup_initial_users
 

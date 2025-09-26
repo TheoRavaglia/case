@@ -65,7 +65,7 @@ def mock_load_metrics(monkeypatch, mock_metrics_data):
         return mock_metrics_data.copy()
     
     # Import and patch the function
-    from services import load_metrics_data
+    from services.services import load_metrics_data
     monkeypatch.setattr("services.load_metrics_data", mock_load)
     return mock_load
 
