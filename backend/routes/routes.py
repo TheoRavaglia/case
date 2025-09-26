@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from datetime import timedelta
-from models import LoginRequest, LoginResponse, MetricsFilters, MetricsResponse
-from auth import authenticate_user, create_access_token, verify_token, get_user_by_email, ACCESS_TOKEN_EXPIRE_MINUTES
-from services import get_filtered_metrics
+from models.models import LoginRequest, LoginResponse, MetricsFilters, MetricsResponse
+from auth.auth import authenticate_user, create_access_token, verify_token, get_user_by_email, ACCESS_TOKEN_EXPIRE_MINUTES
+from services.services import get_filtered_metrics
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)

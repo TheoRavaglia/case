@@ -1,15 +1,15 @@
 import pandas as pd
 from datetime import datetime
-from models import MetricsFilters, MetricsResponse, MetricData
+from models.models import MetricsFilters, MetricsResponse, MetricData
 from typing import List
 
 def load_metrics_data():
     """Load metrics data from CSV file."""
     import os
     try:
-        # Get the directory of this file (backend directory)
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(current_dir, 'metrics.csv')
+        # Get the backend directory (parent of services folder)
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(current_dir, 'data', 'metrics.csv')
         df = pd.read_csv(csv_path)
         # Convert date column to datetime
         df['date'] = pd.to_datetime(df['date'])
@@ -21,8 +21,8 @@ def load_full_metrics_data():
     """Load ALL metrics data from CSV file for filtering operations."""
     import os
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(current_dir, 'metrics.csv')
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(current_dir, 'data', 'metrics.csv')
         
         print("Loading full CSV data for date filtering...")
         df = pd.read_csv(csv_path)
@@ -156,8 +156,8 @@ def load_metrics_data_optimized(filters: MetricsFilters, page: int = 1, page_siz
     """Load metrics data with super optimization for large datasets."""
     import os
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(current_dir, 'metrics.csv')
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(current_dir, 'data', 'metrics.csv')
         
         print(f"Loading page {page} with {page_size} records...")
         
@@ -248,8 +248,8 @@ def get_total_count_estimate() -> int:
     """Get estimated total count without loading full dataset."""
     import os
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(current_dir, 'metrics.csv')
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(current_dir, 'data', 'metrics.csv')
         
         # Count lines optimized way
         with open(csv_path, 'r') as f:
