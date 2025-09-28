@@ -1,12 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from routes.routes import router
-from utils.app_logging import setup_production_logging, log_api_access
 import time
 
-# Setup logging system
-logger = setup_production_logging()
-logger.info("Starting Marketing Analytics API...")
+print("Starting Marketing Analytics API...")
 
 app = FastAPI(
     title="Marketing Analytics API", 
@@ -16,21 +13,13 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Logging middleware
-@app.middleware("http")
-async def logging_middleware(request: Request, call_next):
-    start_time = time.time()
+# Simple request logging (optional)
+@app.middleware("http")  
+async def simple_logging(request: Request, call_next):
     response = await call_next(request)
-    duration = time.time() - start_time
-    
-    # Log API access
-    log_api_access(
-        method=request.method,
-        path=request.url.path,
-        status=response.status_code,
-        duration=duration
-    )
-    
+    # Only log errors to avoid spam
+    if response.status_code >= 400:
+        print(f"ERROR: {request.method} {request.url.path} - {response.status_code}")
     return response
 
 # Configure CORS
