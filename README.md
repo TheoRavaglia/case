@@ -49,6 +49,23 @@ python -m uvicorn main:app --reload --port 8001
 
 **Note:** The frontend is pre-configured to use the cloud backend. Just run `npm run dev` to start testing immediately.
 
+## Docker (Backend)
+
+To run the backend in a Docker container:
+
+```sh
+# In the backend folder
+cd backend
+# Build the image
+docker build -t marketing-analytics-api .
+# Run the container
+docker run -p 8000:8000 marketing-analytics-api
+```
+
+Access the API at `http://localhost:8000`.
+
+> Make sure the CSV files are present in the `data/` folder before building the image.
+
 ## Real-time API Monitoring
 
 The system includes a built-in real-time monitoring dashboard that tracks all API activity:
@@ -79,4 +96,5 @@ Admin users can view all columns including cost data, while regular users have r
 - **Data Processing:** Pandas, CSV handling, Smart pagination
 - **Deployment:** Render.com (Backend), Local development (Frontend)
 - **Testing:** Pytest with comprehensive test coverage
+
 
