@@ -98,10 +98,3 @@ def get_total_rows_count():
         # Load data to get accurate count
         df = _load_csv_with_cache()
         return len(df)
-
-# Optimized aliases
-load_full_metrics_data = load_metrics_data
-load_metrics_data_optimized = load_metrics_data_filtered
-get_total_count_estimate = get_total_rows_count
-get_total_count_with_filters = lambda filters: get_total_rows_count()  # Real count, not limited
-load_and_filter_data_smart = load_metrics_data_filtered

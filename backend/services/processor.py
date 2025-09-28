@@ -8,7 +8,6 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
     """Optimized function to get filtered metrics with smart caching - shows ALL data."""
     try:
         page_size = min(page_size, 1000)  # Allow more records per page for complete data access
-        is_admin = user.get('role') == 'admin'
         
         # Load complete data first, then apply filters
         if filters.start_date or filters.end_date or filters.search:
@@ -55,7 +54,8 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
                     'conversions': float(row['conversions']),
                     'conversion_rate': float(conversion_rates.iloc[idx])
                 }
-                if is_admin and 'cost_micros' in row.index and pd.notna(row['cost_micros']):
+                # Add cost_micros only if present (filtered by apply_user_permissions)
+                if 'cost_micros' in row.index and pd.notna(row['cost_micros']):
                     metric_data['cost_micros'] = int(row['cost_micros'])
                 metrics_list.append(MetricData(**metric_data))
         else:

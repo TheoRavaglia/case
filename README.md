@@ -28,6 +28,7 @@ The backend is deployed and running on Render.com:
 - **API Documentation:** https://marketing-analytics-api-nsfc.onrender.com/docs
 - **Health Check:** https://marketing-analytics-api-nsfc.onrender.com/health
 - **API Endpoints:** https://marketing-analytics-api-nsfc.onrender.com/api
+- **Real-time Logs:** https://marketing-analytics-api-nsfc.onrender.com/api/logs
 
 ## Quick Start
 
@@ -47,6 +48,22 @@ python -m uvicorn main:app --reload --port 8001
 ```
 
 **Note:** The frontend is pre-configured to use the cloud backend. Just run `npm run dev` to start testing immediately.
+
+## Real-time API Monitoring
+
+The system includes a built-in real-time monitoring dashboard that tracks all API activity:
+
+**🚀 Live Monitoring:** https://marketing-analytics-api-nsfc.onrender.com/api/logs
+
+**Features:**
+- Real-time HTTP request tracking
+- Performance metrics (response times, success rates)
+- User activity monitoring (with JWT identification)  
+- Auto-refresh every 3 seconds
+- Terminal-style UI with color-coded status levels
+- Public endpoint (no authentication required)
+
+**Alternative JSON endpoint:** https://marketing-analytics-api-nsfc.onrender.com/api/logs/json
 
 ## Test Credentials
 
