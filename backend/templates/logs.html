@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Marketing Analytics API - Real-time Logs</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="10">
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            margin: 0; 
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+            border-left: 4px solid #00ff00;
+        }
+        .stats { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 20px;
+        }
+        .stat-card { 
+            background: #2a2a2a; 
+            padding: 15px; 
+            border-radius: 6px;
+            border-left: 3px solid #0099ff;
+        }
+        .logs { 
+            background: #1f1f1f; 
+            padding: 20px; 
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .log-entry { 
+            padding: 8px 0; 
+            border-bottom: 1px solid #333;
+            display: grid;
+            grid-template-columns: 80px 60px 300px 60px 150px 100px 80px;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-header { 
+            font-weight: bold; 
+            color: #ffffff;
+            background: #333;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        .SUCCESS { color: #00ff00; }
+        .WARNING { color: #ffaa00; }
+        .ERROR { color: #ff4444; }
+        .INFO { color: #00aaff; }
+        .title { color: #ffffff; font-size: 24px; margin-bottom: 10px; }
+        .subtitle { color: #aaaaaa; font-size: 14px; }
+        .refresh-note { 
+            color: #888; 
+            font-size: 12px; 
+            text-align: center; 
+            margin-top: 20px; 
+        }
+        .loading { text-align: center; color: #ffaa00; margin: 20px 0; }
+        .error { color: #ff4444; text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🚀 Marketing Analytics API - Live Monitoring</div>
+            <div class="subtitle" id="status">
+                Loading...
+            </div>
+        </div>
+        
+        <div id="stats-container" class="stats">
+            <div class="loading">📊 Loading statistics...</div>
+        </div>
+        
+        <div class="logs">
+            <div class="log-header log-entry">
+                <span>Time</span>
+                <span>Method</span>
+                <span>Path</span>
+                <span>Status</span>
+                <span>User</span>
+                <span>Response Time</span>
+                <span>Level</span>
+            </div>
+            <div id="logs-container">
+                <div class="loading">🔄 Loading recent requests...</div>
+            </div>
+        </div>
+        
+        <div class="refresh-note">
+            🔄 This page auto-refreshes every 10 seconds | 
+            📡 Showing real-time HTTP requests to the API |
+            🌐 Public monitoring endpoint
+        </div>
+    </div>
+
+    <script>
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs/json');
+                const data = await response.json();
+                
+                // Update status
+                const now = new Date();
+                document.getElementById('status').innerHTML = `
+                    Status: ${data.api_status} | 
+                    Server: ${data.server_location} | 
+                    Last Update: ${now.toLocaleString()}
+                `;
+                
+                // Update statistics
+                const statsHtml = `
+                    <div class="stat-card">
+                        <strong>📊 Total Requests</strong><br>
+                        ${data.statistics.total_requests}
+                    </div>
+                    <div class="stat-card">
+                        <strong>✅ Success Rate</strong><br>
+                        ${data.statistics.success_rate}
+                    </div>
+                    <div class="stat-card">
+                        <strong>⚡ Avg Response Time</strong><br>
+                        ${data.statistics.average_response_time}
+                    </div>
+                    <div class="stat-card">
+                        <strong>💾 Logs in Memory</strong><br>
+                        ${data.statistics.logs_in_memory}
+                    </div>
+                `;
+                document.getElementById('stats-container').innerHTML = statsHtml;
+                
+                // Update logs
+                let logsHtml = '';
+                data.recent_requests.forEach(log => {
+                    const path = log.path.length > 50 ? log.path.substring(0, 50) + '...' : log.path;
+                    const user = log.user.length > 20 ? log.user.substring(0, 20) + '...' : log.user;
+                    
+                    logsHtml += `
+                        <div class="log-entry">
+                            <span>${log.time}</span>
+                            <span class="${log.level}">${log.method}</span>
+                            <span>${path}</span>
+                            <span class="${log.level}">${log.status}</span>
+                            <span>${user}</span>
+                            <span>${log.response_time}</span>
+                            <span class="${log.level}">${log.level}</span>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('logs-container').innerHTML = logsHtml || 
+                    '<div class="loading">No requests logged yet...</div>';
+                
+            } catch (error) {
+                document.getElementById('logs-container').innerHTML = 
+                    `<div class="error">❌ Error loading logs: ${error.message}</div>`;
+            }
+        }
+        
+        // Load logs immediately
+        loadLogs();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(loadLogs, 10000);
+    </script>
+</body>
+</html>

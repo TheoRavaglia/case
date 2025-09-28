@@ -93,15 +93,27 @@ async def get_metrics(
 
 @router.get("/logs")
 async def get_logs():
-    """Public endpoint to show real-time API activity logs."""
+    """Public endpoint to show real-time API activity logs in HTML format."""
+    from fastapi.responses import FileResponse
+    import os
+    
+    # Return the HTML file
+    html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates", "logs.html")
+    return FileResponse(html_path, media_type="text/html")
+
+@router.get("/logs/json")
+async def get_logs_json():
+    """Alternative endpoint for JSON formatted logs (pretty printed)."""
     from datetime import datetime
     from utils.logger import api_logger
+    from fastapi.responses import JSONResponse
+    import json
     
     # Get recent logs and stats
     recent_logs = api_logger.get_recent_logs(limit=20)
     stats = api_logger.get_stats()
     
-    return {
+    data = {
         "api_status": "RUNNING",
         "timestamp": datetime.now().isoformat(),
         "server_location": "Render.com",
@@ -124,6 +136,12 @@ async def get_logs():
             }
             for log in recent_logs
         ],
-        "message": "Real-time API monitoring - Updated automatically",
-        "note": "Shows actual HTTP requests and responses from the API"
+        "message": "Real-time API monitoring - JSON format",
+        "note": "Use /api/logs for HTML view or /api/logs/json for JSON"
     }
+    
+    # Return pretty-printed JSON
+    return JSONResponse(
+        content=data,
+        headers={"Content-Type": "application/json; charset=utf-8"}
+    )

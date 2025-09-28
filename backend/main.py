@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from routes.routes import router
 from middleware import RequestLoggingMiddleware
+import os
 
 app = FastAPI(
     title="Marketing Analytics API", 
@@ -62,6 +64,11 @@ async def health_check():
         "timestamp": "2025-09-25",
         "service": "Marketing Analytics API"
     }
+
+# Mount static files for templates
+templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+if os.path.exists(templates_dir):
+    app.mount("/templates", StaticFiles(directory=templates_dir), name="templates")
 
 # Include routes
 app.include_router(router, prefix="/api")
