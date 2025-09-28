@@ -81,26 +81,22 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return request.client.host if request.client else "unknown"
     
     async def extract_user_from_request(self, request: Request) -> str:
-        """Extract user email from JWT token if present."""
+        """Fast user extraction with minimal overhead."""
+        
+        # Skip user extraction for public paths (faster)
+        path = request.url.path
+        if path in {"/", "/docs", "/openapi.json", "/api/logs", "/api/logs/json", "/health"}:
+            return None
+        
+        # Quick header check
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return None
         
         try:
-            # Skip for public endpoints
-            if request.url.path in ["/", "/docs", "/openapi.json", "/api/logs"]:
-                return None
-            
-            # Get Authorization header
-            auth_header = request.headers.get("authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                return None
-            
-            # Extract token
-            token = auth_header.replace("Bearer ", "")
-            
-            # Verify token (import here to avoid circular imports)
+            # Fast token extraction and verification
+            token = auth_header[7:]  # Remove "Bearer " (faster than replace)
             from auth import verify_token
-            email = verify_token(token)
-            return email
-            
+            return verify_token(token)
         except Exception:
-            # If token verification fails, return None (don't break the request)
             return None

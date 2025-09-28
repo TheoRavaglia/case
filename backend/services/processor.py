@@ -5,42 +5,56 @@ from .filters import filter_metrics_by_date, search_metrics, sort_metrics, apply
 
 
 def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, page_size: int = 20) -> MetricsResponse:
-    """Main function to get filtered metrics with pagination."""
+    """Optimized function to get filtered metrics with smart caching."""
     try:
         page_size = min(page_size, 100)  # Max 100 per page
-        
-        # Load and filter data
-        df = load_metrics_data()
-        if filters.start_date or filters.end_date:
-            df = filter_metrics_by_date(df, filters.start_date, filters.end_date)
-        if filters.search:
-            df = search_metrics(df, filters.search)
-        df = sort_metrics(df, filters.sort_by, filters.sort_order)
-        
-        # Apply pagination
-        total_count = len(df)
-        start_idx = (page - 1) * page_size
-        df = df.iloc[start_idx:start_idx + page_size]
-        
-        # Apply permissions
-        df = apply_user_permissions(df, user)
         is_admin = user.get('role') == 'admin'
         
-        # Convert to response format
-        metrics_list = []
-        for _, row in df.iterrows():
-            conversion_rate = (row['conversions'] / row['clicks']) * 100 if row['clicks'] > 0 else 0
-            metric_data = {
-                'date': row['date'].strftime('%Y-%m-%d'),
-                'campaign_name': f"Campaign {row['campaign_id']}",
-                'impressions': int(float(row['impressions'])),
-                'clicks': int(float(row['clicks'])),
-                'conversions': float(row['conversions']),
-                'conversion_rate': float(conversion_rate)
-            }
-            if is_admin and 'cost_micros' in row.index and pd.notna(row['cost_micros']):
-                metric_data['cost_micros'] = int(row['cost_micros'])
-            metrics_list.append(MetricData(**metric_data))
+        # Use optimized loader with built-in filtering (O(1) cache hit)
+        from .loader import load_metrics_data_filtered
+        df = load_metrics_data_filtered(
+            start_date=filters.start_date,
+            end_date=filters.end_date, 
+            search_term=filters.search
+        )
+        
+        # Fast sorting (only if needed)
+        if filters.sort_by:
+            df = sort_metrics(df, filters.sort_by, filters.sort_order)
+        
+        # Get total before pagination
+        total_count = len(df)
+        
+        # Efficient pagination (avoid copying large datasets)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        df_page = df.iloc[start_idx:end_idx] if start_idx < len(df) else df.iloc[0:0]
+        
+        # Apply permissions only to paginated data
+        df_page = apply_user_permissions(df_page, user)
+        
+        # Vectorized conversion (much faster than iterrows)
+        if not df_page.empty:
+            # Calculate conversion rates vectorized
+            conversion_rates = (df_page['conversions'] / df_page['clicks'].replace(0, 1)) * 100
+            conversion_rates = conversion_rates.fillna(0)
+            
+            # Build metrics list efficiently
+            metrics_list = []
+            for idx, (_, row) in enumerate(df_page.iterrows()):
+                metric_data = {
+                    'date': row['date'].strftime('%Y-%m-%d'),
+                    'campaign_name': f"Campaign {row['campaign_id']}",
+                    'impressions': int(row['impressions']),
+                    'clicks': int(row['clicks']),
+                    'conversions': float(row['conversions']),
+                    'conversion_rate': float(conversion_rates.iloc[idx])
+                }
+                if is_admin and 'cost_micros' in row.index and pd.notna(row['cost_micros']):
+                    metric_data['cost_micros'] = int(row['cost_micros'])
+                metrics_list.append(MetricData(**metric_data))
+        else:
+            metrics_list = []
         
         return MetricsResponse(
             metrics=metrics_list,
@@ -51,4 +65,4 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
         )
     except Exception as e:
         print(f"Error in get_filtered_metrics: {str(e)}")
-        return MetricsResponse(metrics=[], total_count=0)
+        return MetricsResponse(metrics=[], total_count=0, page=1, page_size=page_size, total_pages=1)

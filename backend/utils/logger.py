@@ -10,66 +10,63 @@ from collections import deque
 import json
 
 class APILogger:
-    """Thread-safe logger for capturing API requests and system events."""
+    """Ultra-fast thread-safe logger optimized for high performance."""
     
-    def __init__(self, max_logs: int = 100):
+    def __init__(self, max_logs: int = 50):  # Reduced for speed
         self.max_logs = max_logs
-        self.logs = deque(maxlen=max_logs)  # Thread-safe circular buffer
+        self.logs = deque(maxlen=max_logs)  # Smaller buffer for faster iteration
+        self.stats = {
+            'total_requests': 0,
+            'success_count': 0,
+            'response_times': deque(maxlen=20)  # Only keep last 20 for avg calculation
+        }
         self.setup_logging()
     
     def setup_logging(self):
-        """Setup Python logging configuration."""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+        """Minimal logging setup for performance."""
         self.logger = logging.getLogger("marketing_api")
+        self.logger.setLevel(logging.INFO)
     
     def log_request(self, method: str, path: str, client_ip: str, 
                    status_code: int, response_time: float = None, 
                    user_email: str = None, error: str = None):
-        """Log HTTP request with details."""
+        """Optimized request logging with minimal overhead."""
         
         timestamp = datetime.now()
         
-        # Determine log level based on status code
-        if status_code >= 500:
-            level = "ERROR"
-        elif status_code >= 400:
-            level = "WARNING"  
-        else:
-            level = "SUCCESS"
+        # Fast level determination
+        level = "ERROR" if status_code >= 500 else "WARNING" if status_code >= 400 else "SUCCESS"
         
-        # Create log entry
+        # Pre-format strings for speed
+        time_str = timestamp.strftime("%H:%M:%S")
+        response_time_ms = round(response_time * 1000, 2) if response_time else None
+        
+        # Minimal log entry (only essential fields)
         log_entry = {
-            "timestamp": timestamp.isoformat(),
-            "time_formatted": timestamp.strftime("%H:%M:%S"),
+            "time_formatted": time_str,
             "method": method,
-            "path": path,
-            "client_ip": client_ip,
+            "path": path[:100],  # Truncate long paths immediately
             "status_code": status_code,
             "level": level,
-            "response_time_ms": round(response_time * 1000, 2) if response_time else None,
-            "user": user_email or "anonymous",
-            "error": error
+            "response_time_ms": response_time_ms,
+            "user": (user_email or "anonymous")[:30],  # Limit user field length
+            "error": error[:50] if error else None  # Truncate errors
         }
         
-        # Add to circular buffer (thread-safe)
+        # Update stats efficiently (avoid recalculation)
+        if method != "SYSTEM":
+            self.stats['total_requests'] += 1
+            if level == "SUCCESS":
+                self.stats['success_count'] += 1
+            if response_time_ms:
+                self.stats['response_times'].append(response_time_ms)
+        
+        # Add to buffer
         self.logs.append(log_entry)
         
-        # Also log to Python logger
-        log_message = f"{method} {path} - {status_code} - {client_ip}"
-        if user_email:
-            log_message += f" - User: {user_email}"
-        if response_time:
-            log_message += f" - {response_time*1000:.2f}ms"
-        
+        # Minimal logging (only for errors)
         if level == "ERROR":
-            self.logger.error(log_message + (f" - Error: {error}" if error else ""))
-        elif level == "WARNING":
-            self.logger.warning(log_message)
-        else:
-            self.logger.info(log_message)
+            self.logger.error(f"{method} {path} - {status_code} - {error or 'Unknown error'}")
     
     def log_system_event(self, event: str, details: str = None):
         """Log system events (startup, errors, etc.)."""
@@ -105,38 +102,29 @@ class APILogger:
         return logs_list
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get API usage statistics."""
-        logs_list = list(self.logs)
+        """Get pre-calculated stats for maximum performance."""
+        # Use pre-calculated values instead of iterating through logs
+        total = self.stats['total_requests']
+        success_rate = round((self.stats['success_count'] / max(total, 1)) * 100, 2) if total > 0 else 0
         
-        if not logs_list:
-            return {
-                "total_requests": 0,
-                "success_rate": 0,
-                "average_response_time": 0,
-                "status_codes": {}
-            }
+        # Fast average from deque
+        response_times = list(self.stats['response_times'])
+        avg_time = round(sum(response_times) / len(response_times), 2) if response_times else 0
         
-        # Calculate stats
-        total_requests = len([log for log in logs_list if log["method"] != "SYSTEM"])
-        success_count = len([log for log in logs_list if log["level"] == "SUCCESS"])
-        
-        # Response times (excluding None values)
-        response_times = [log["response_time_ms"] for log in logs_list 
-                         if log["response_time_ms"] is not None]
-        
-        # Status code distribution
+        # Quick status code count from recent logs
+        recent_logs = list(self.logs)[-10:]  # Only check last 10 for speed
         status_codes = {}
-        for log in logs_list:
-            if log["method"] != "SYSTEM":
+        for log in recent_logs:
+            if log.get("method") != "SYSTEM":
                 code = log["status_code"]
                 status_codes[code] = status_codes.get(code, 0) + 1
         
         return {
-            "total_requests": total_requests,
-            "success_rate": round((success_count / max(total_requests, 1)) * 100, 2),
-            "average_response_time": round(sum(response_times) / max(len(response_times), 1), 2) if response_times else 0,
+            "total_requests": total,
+            "success_rate": success_rate,
+            "average_response_time": avg_time,
             "status_codes": status_codes,
-            "active_logs_count": len(logs_list)
+            "logs_in_memory": len(recent_logs)
         }
 
 # Global logger instance
