@@ -27,10 +27,27 @@ class MetricData(BaseModel):
     conversions: float
     conversion_rate: float
 
+class MetricDataPublic(BaseModel):
+    """Metric data for regular users (no cost information)"""
+    date: str
+    campaign_name: str
+    impressions: int
+    clicks: int
+    conversions: float
+    conversion_rate: float
+
 class MetricsResponse(BaseModel):
     model_config = ConfigDict(exclude_none=True)
     
     metrics: List[MetricData]
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
+
+class MetricsResponsePublic(BaseModel):
+    """Metrics response for regular users (no cost information)"""
+    metrics: List[MetricDataPublic]
     total_count: int
     page: int
     page_size: int
