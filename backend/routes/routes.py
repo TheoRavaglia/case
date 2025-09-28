@@ -122,7 +122,7 @@ async def get_logs_json():
             "success_rate": f"{stats['success_rate']}%",
             "average_response_time": f"{stats['average_response_time']}ms",
             "status_codes": stats["status_codes"],
-            "logs_in_memory": stats["active_logs_count"]
+            "logs_in_memory": stats["active_logs_count"]  # Campo correto
         },
         "recent_requests": [
             {

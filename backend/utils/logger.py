@@ -41,16 +41,18 @@ class APILogger:
         time_str = timestamp.strftime("%H:%M:%S")
         response_time_ms = round(response_time * 1000, 2) if response_time else None
         
-        # Minimal log entry (only essential fields)
+        # Complete log entry (não truncar dados)
         log_entry = {
+            "timestamp": timestamp.isoformat(),
             "time_formatted": time_str,
             "method": method,
-            "path": path[:100],  # Truncate long paths immediately
+            "path": path,  # Mostrar path completo
+            "client_ip": client_ip,
             "status_code": status_code,
             "level": level,
             "response_time_ms": response_time_ms,
-            "user": (user_email or "anonymous")[:30],  # Limit user field length
-            "error": error[:50] if error else None  # Truncate errors
+            "user": user_email or "anonymous",  # Usuário completo
+            "error": error  # Erro completo
         }
         
         # Update stats efficiently (avoid recalculation)
@@ -64,9 +66,19 @@ class APILogger:
         # Add to buffer
         self.logs.append(log_entry)
         
-        # Minimal logging (only for errors)
+        # Log to Python logger (como antes)
+        log_message = f"{method} {path} - {status_code} - {client_ip}"
+        if user_email:
+            log_message += f" - User: {user_email}"
+        if response_time:
+            log_message += f" - {response_time*1000:.2f}ms"
+        
         if level == "ERROR":
-            self.logger.error(f"{method} {path} - {status_code} - {error or 'Unknown error'}")
+            self.logger.error(log_message + (f" - Error: {error}" if error else ""))
+        elif level == "WARNING":
+            self.logger.warning(log_message)
+        else:
+            self.logger.info(log_message)
     
     def log_system_event(self, event: str, details: str = None):
         """Log system events (startup, errors, etc.)."""
@@ -124,7 +136,7 @@ class APILogger:
             "success_rate": success_rate,
             "average_response_time": avg_time,
             "status_codes": status_codes,
-            "logs_in_memory": len(recent_logs)
+            "active_logs_count": len(self.logs)  # Corrigir o nome do campo
         }
 
 # Global logger instance

@@ -42,9 +42,10 @@
             padding: 8px 0; 
             border-bottom: 1px solid #333;
             display: grid;
-            grid-template-columns: 80px 60px 300px 60px 150px 100px 80px;
+            grid-template-columns: 80px 60px 400px 60px 200px 100px 80px;
             gap: 10px;
             font-size: 14px;
+            word-break: break-all;
         }
         .log-entry:last-child { border-bottom: none; }
         .log-header { 
@@ -143,8 +144,8 @@
                 // Update logs
                 let logsHtml = '';
                 data.recent_requests.forEach(log => {
-                    const path = log.path.length > 50 ? log.path.substring(0, 50) + '...' : log.path;
-                    const user = log.user.length > 20 ? log.user.substring(0, 20) + '...' : log.user;
+                    const path = log.path;  // Mostrar path completo
+                    const user = log.user;  // Mostrar usuário completo
                     
                     logsHtml += `
                         <div class="log-entry">
