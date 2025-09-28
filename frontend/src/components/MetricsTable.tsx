@@ -31,10 +31,9 @@ export default function MetricsTable({ user }: MetricsTableProps) {
 
   // Function to clear all filters
   const clearAllFilters = () => {
-    setFilters({});
+    setFilters({ page: 1, page_size: 50 }); // Reset filters and pagination
     setSortConfig({ key: 'date', direction: 'desc' });
-    // Reload data without filters
-    loadMetricsWithFilters({});
+    loadMetricsWithFilters({ page: 1, page_size: 50 });
   };
 
   const applyFilters = () => loadMetricsWithFilters(filters);
@@ -142,7 +141,7 @@ export default function MetricsTable({ user }: MetricsTableProps) {
             disabled={loading}
             title="Apply selected date filters"
           >
-            {loading ? '⏳ Loading...' : '🔍 Apply Filters'}
+            {loading ? '⏳ Loading...' : '🔍 Apply Date Filter'}
           </button>
         </div>
         
