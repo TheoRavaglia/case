@@ -72,7 +72,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     """Get current user information."""
     return current_user
 
-@router.post("/metrics", response_model=MetricsResponse)
+@router.post("/metrics")
 async def get_metrics(
     filters: MetricsFilters,
     current_user: dict = Depends(get_current_user)
