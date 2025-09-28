@@ -57,7 +57,9 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
                 # Add cost_micros only if present (filtered by apply_user_permissions)
                 if 'cost_micros' in row.index and pd.notna(row['cost_micros']):
                     metric_data['cost_micros'] = int(row['cost_micros'])
-                metrics_list.append(MetricData(**metric_data))
+                
+                # Create MetricData with exclude_unset to avoid None values in JSON
+                metrics_list.append(MetricData.model_validate(metric_data))
         else:
             metrics_list = []
         

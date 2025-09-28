@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -17,6 +17,8 @@ class UserInfo(BaseModel):
     role: str
 
 class MetricData(BaseModel):
+    model_config = ConfigDict(exclude_none=True)
+    
     date: str
     campaign_name: str
     impressions: int
@@ -26,6 +28,8 @@ class MetricData(BaseModel):
     conversion_rate: float
 
 class MetricsResponse(BaseModel):
+    model_config = ConfigDict(exclude_none=True)
+    
     metrics: List[MetricData]
     total_count: int
     page: int
