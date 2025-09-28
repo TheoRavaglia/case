@@ -93,18 +93,37 @@ async def get_metrics(
 
 @router.get("/logs")
 async def get_logs():
-    """Public endpoint to show API activity logs."""
+    """Public endpoint to show real-time API activity logs."""
     from datetime import datetime
+    from utils.logger import api_logger
+    
+    # Get recent logs and stats
+    recent_logs = api_logger.get_recent_logs(limit=20)
+    stats = api_logger.get_stats()
     
     return {
         "api_status": "RUNNING",
         "timestamp": datetime.now().isoformat(),
-        "recent_activity": [
-            f"{datetime.now().strftime('%H:%M:%S')} - API Health Check: OK",
-            f"{datetime.now().strftime('%H:%M:%S')} - Metrics Query: 1,375,455 records processed",
-            f"{datetime.now().strftime('%H:%M:%S')} - User Login: Success", 
-            f"{datetime.now().strftime('%H:%M:%S')} - Documentation Access: OK"
+        "server_location": "Render.com",
+        "statistics": {
+            "total_requests": stats["total_requests"],
+            "success_rate": f"{stats['success_rate']}%",
+            "average_response_time": f"{stats['average_response_time']}ms",
+            "status_codes": stats["status_codes"],
+            "logs_in_memory": stats["active_logs_count"]
+        },
+        "recent_requests": [
+            {
+                "time": log["time_formatted"],
+                "method": log["method"],
+                "path": log["path"],
+                "status": log["status_code"],
+                "user": log["user"],
+                "response_time": f"{log['response_time_ms']}ms" if log["response_time_ms"] else "N/A",
+                "level": log["level"]
+            }
+            for log in recent_logs
         ],
-        "message": "API is running normally on Render.com",
-        "note": "This is a public demo endpoint showing API activity"
+        "message": "Real-time API monitoring - Updated automatically",
+        "note": "Shows actual HTTP requests and responses from the API"
     }

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.routes import router
+from middleware import RequestLoggingMiddleware
 
 app = FastAPI(
     title="Marketing Analytics API", 
@@ -9,6 +10,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Add request logging middleware (first)
+app.add_middleware(RequestLoggingMiddleware)
 
 # Configure CORS
 app.add_middleware(
