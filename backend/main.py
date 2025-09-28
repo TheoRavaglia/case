@@ -1,9 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.routes import router
-import time
-
-print("Starting Marketing Analytics API...")
 
 app = FastAPI(
     title="Marketing Analytics API", 
@@ -12,15 +9,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
-
-# Simple request logging (optional)
-@app.middleware("http")  
-async def simple_logging(request: Request, call_next):
-    response = await call_next(request)
-    # Only log errors to avoid spam
-    if response.status_code >= 400:
-        print(f"ERROR: {request.method} {request.url.path} - {response.status_code}")
-    return response
 
 # Configure CORS
 app.add_middleware(
@@ -76,4 +64,6 @@ app.include_router(router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
