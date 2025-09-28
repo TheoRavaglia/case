@@ -8,6 +8,12 @@ import os
 _METRICS_CACHE = None
 _CACHE_TIMESTAMP = None
 
+def clear_cache():
+    """Clear the global cache to force reload."""
+    global _METRICS_CACHE, _CACHE_TIMESTAMP
+    _METRICS_CACHE = None
+    _CACHE_TIMESTAMP = None
+
 def _get_csv_path():
     """Helper to get CSV path."""
     current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,14 +30,22 @@ def _load_csv_with_cache():
         file_mtime = os.path.getmtime(csv_path)
         
         if _METRICS_CACHE is None or _CACHE_TIMESTAMP != file_mtime:
-            # Load and optimize data types for speed
-            df = pd.read_csv(csv_path, dtype={
-                'impressions': 'int32',
-                'clicks': 'int32', 
-                'conversions': 'float32',
-                'cost_micros': 'int64'
-            })
+            # Load CSV without forcing incompatible data types
+            df = pd.read_csv(csv_path)
             df['date'] = pd.to_datetime(df['date']).dt.normalize()
+            
+            # Optimize data types after loading (safer approach)
+            try:
+                # Convert to more efficient types where possible
+                if 'impressions' in df.columns:
+                    df['impressions'] = pd.to_numeric(df['impressions'], downcast='integer')
+                if 'clicks' in df.columns:
+                    df['clicks'] = pd.to_numeric(df['clicks'], downcast='integer')
+                if 'conversions' in df.columns:
+                    df['conversions'] = pd.to_numeric(df['conversions'], downcast='float')
+            except Exception:
+                # Keep original types if conversion fails
+                pass
             
             # Cache the data
             _METRICS_CACHE = df
@@ -67,21 +81,27 @@ def load_metrics_data():
     """Standard loader - uses cache for O(1) performance after first load."""
     return _load_csv_with_cache()
 
-# Fast counting without loading full data
+# Fast counting with accurate results
 @lru_cache(maxsize=1)
 def get_total_rows_count():
-    """Get total row count efficiently."""
+    """Get accurate total row count."""
     try:
-        # Count lines without loading full CSV
+        # If we have cached data, use its length for accuracy
+        if _METRICS_CACHE is not None:
+            return len(_METRICS_CACHE)
+        
+        # Otherwise count lines in file
         csv_path = _get_csv_path()
         with open(csv_path, 'r') as f:
             return sum(1 for line in f) - 1  # Subtract header
     except:
-        return 1375455  # Fallback estimate
+        # Load data to get accurate count
+        df = _load_csv_with_cache()
+        return len(df)
 
 # Optimized aliases
 load_full_metrics_data = load_metrics_data
 load_metrics_data_optimized = load_metrics_data_filtered
 get_total_count_estimate = get_total_rows_count
-get_total_count_with_filters = lambda filters: min(get_total_rows_count(), 10000)  # Estimate
+get_total_count_with_filters = lambda filters: get_total_rows_count()  # Real count, not limited
 load_and_filter_data_smart = load_metrics_data_filtered

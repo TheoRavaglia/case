@@ -5,18 +5,23 @@ from .filters import filter_metrics_by_date, search_metrics, sort_metrics, apply
 
 
 def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, page_size: int = 20) -> MetricsResponse:
-    """Optimized function to get filtered metrics with smart caching."""
+    """Optimized function to get filtered metrics with smart caching - shows ALL data."""
     try:
-        page_size = min(page_size, 100)  # Max 100 per page
+        page_size = min(page_size, 1000)  # Allow more records per page for complete data access
         is_admin = user.get('role') == 'admin'
         
-        # Use optimized loader with built-in filtering (O(1) cache hit)
-        from .loader import load_metrics_data_filtered
-        df = load_metrics_data_filtered(
-            start_date=filters.start_date,
-            end_date=filters.end_date, 
-            search_term=filters.search
-        )
+        # Load complete data first, then apply filters
+        if filters.start_date or filters.end_date or filters.search:
+            # Use filtered loader only when filters are applied
+            from .loader import load_metrics_data_filtered
+            df = load_metrics_data_filtered(
+                start_date=filters.start_date,
+                end_date=filters.end_date, 
+                search_term=filters.search
+            )
+        else:
+            # Load all data when no filters (complete dataset)
+            df = load_metrics_data()
         
         # Fast sorting (only if needed)
         if filters.sort_by:
