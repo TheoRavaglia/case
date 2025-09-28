@@ -52,6 +52,7 @@ def get_filtered_metrics(filters: MetricsFilters, user: dict, page: int = 1, pag
             for idx, (_, row) in enumerate(df_page.iterrows()):
                 metric_data = {
                     'date': row['date'].strftime('%Y-%m-%d'),
+                    'campaign_id': int(row['campaign_id']) if 'campaign_id' in row else None,
                     'campaign_name': f"Campaign {row['campaign_id']}",
                     'impressions': int(row['impressions']),
                     'clicks': int(row['clicks']),

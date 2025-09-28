@@ -187,8 +187,8 @@ export default function MetricsTable({ user }: MetricsTableProps) {
                 <th onClick={() => handleSort('date')}>
                   Date {getSortIcon('date')}
                 </th>
-                <th onClick={() => handleSort('campaign_name')}>
-                  Campaign {getSortIcon('campaign_name')}
+                <th onClick={() => handleSort('campaign_id')}>
+                  Campaign {getSortIcon('campaign_id')}
                 </th>
                 <th onClick={() => handleSort('impressions')}>
                   Impressions {getSortIcon('impressions')}
@@ -211,7 +211,7 @@ export default function MetricsTable({ user }: MetricsTableProps) {
               {metrics.map((metric, index) => (
                 <tr key={index}>
                   <td>{formatDate(metric.date)}</td>
-                  <td>{metric.campaign_name}</td>
+                  <td>{metric.campaign_name} <span style={{color:'#888'}}>({metric.campaign_id})</span></td>
                   <td>{metric.impressions.toLocaleString()}</td>
                   <td>{metric.clicks.toLocaleString()}</td>
                   <td>{metric.conversions.toLocaleString()}</td>

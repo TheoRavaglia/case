@@ -7,6 +7,7 @@ export interface User {
 
 export interface Metric {
   date: string;
+  campaign_id: number;
   campaign_name: string;
   impressions: number;
   clicks: number;
