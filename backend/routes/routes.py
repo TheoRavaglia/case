@@ -99,3 +99,50 @@ async def get_metrics(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving metrics: {str(e)}"
         )
+
+@router.get("/logs")
+async def get_application_logs(
+    limit: int = 100,
+    level: str = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get application logs (Admin only)."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token"
+        )
+    
+    try:
+        # Verify token and get user
+        payload = verify_token(credentials.credentials)
+        user = get_user_by_email(payload.get("sub"))
+        
+        if not user or user["role"] != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required for logs"
+            )
+        
+        # Import logging function
+        from utils.app_logging import get_app_logs
+        
+        logs = get_app_logs(limit=limit, level=level)
+        
+        return {
+            "logs": logs,
+            "total_retrieved": len(logs),
+            "filters": {
+                "limit": limit,
+                "level": level
+            },
+            "message": "Logs retrieved successfully"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving logs: {str(e)}"
+        )
