@@ -31,7 +31,7 @@ export default function MetricsTable({ user }: MetricsTableProps) {
 
   // Function to clear all filters
   const clearAllFilters = () => {
-    setFilters({ page: 1, page_size: 50 }); // Reset filters and pagination
+    setFilters({ page: 1, page_size: 50 }); // Reset filters, pagination, and column filters
     setSortConfig({ key: 'date', direction: 'desc' });
     loadMetricsWithFilters({ page: 1, page_size: 50 });
   };
